@@ -1,50 +1,78 @@
 package com.mrq.bingo.model;
 
-import lombok.Getter;
-
 import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-
-@Getter
 public class Ticket {
-    public static final int ROWS = 3;
-    public static final int COLS = 9;
-    public static final int NUMBERS_PER_ROW = 5;
-
-    private final Cell[][] grid;
+    private final int[][] grid;
+    private static final int ROWS = 3;
+    private static final int COLS = 9;
 
     public Ticket() {
-        this.grid = new Cell[ROWS][COLS];
-        initializeEmptyGrid();
+        this.grid = new int[ROWS][COLS];
     }
 
-    private void initializeEmptyGrid() {
+    public void placeNumber(int number, int col) {
+        // Find first empty row in column
         for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                grid[row][col] = new Cell(null, col);
+            if (grid[row][col] == 0) {
+                grid[row][col] = number;
+                sortColumn(col);
+                break;
             }
         }
     }
 
-    public void setNumber(int row, int col, Integer value) {
-        validatePosition(row, col);
-        grid[row][col] = new Cell(value, col);
-    }
-
-    public Cell getCell(int row, int col) {
-        validatePosition(row, col);
-        return grid[row][col];
-    }
-
-    public Stream<Cell> streamCells() {
-        return Arrays.stream(grid)
-                .flatMap(Arrays::stream);
-    }
-
-    private void validatePosition(int row, int col) {
-        if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
-            throw new IllegalArgumentException("Invalid position: row=" + row + ", col=" + col);
+    private void sortColumn(int col) {
+        int[] column = new int[ROWS];
+        for (int i = 0; i < ROWS; i++) {
+            column[i] = grid[i][col];
         }
+        Arrays.sort(column);
+        for (int i = 0; i < ROWS; i++) {
+            grid[i][col] = column[i];
+        }
+    }
+
+    public void removeNumber(int row, int col) {
+        grid[row][col] = 0;
+        sortColumn(col);
+    }
+
+    public List<Integer> getNumbersInColumn(int col) {
+        return IntStream.range(0, ROWS)
+                .map(row -> grid[row][col])
+                .filter(num -> num > 0)
+                .boxed()
+                .collect(Collectors.toList());
+    }
+
+    public int getNumberCountInRow(int row) {
+        return (int) IntStream.range(0, COLS)
+                .map(col -> grid[row][col])
+                .filter(num -> num > 0)
+                .count();
+    }
+
+    public List<Integer> getEmptyColumnsInRow(int row) {
+        return IntStream.range(0, COLS)
+                .filter(col -> grid[row][col] == 0)
+                .boxed()
+                .collect(Collectors.toList());
+    }
+
+    public List<Integer> getFilledColumnsInRow(int row) {
+        return IntStream.range(0, COLS)
+                .filter(col -> grid[row][col] > 0)
+                .boxed()
+                .collect(Collectors.toList());
+    }
+
+    public int[][] getGrid() {
+        return Arrays.stream(grid)
+                .map(int[]::clone)
+                .toArray(int[][]::new);
     }
 }
