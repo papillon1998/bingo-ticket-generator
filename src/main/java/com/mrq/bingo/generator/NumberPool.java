@@ -1,56 +1,39 @@
+// src/main/java/com/mrq/bingo/generator/NumberPool.java
 package com.mrq.bingo.generator;
 
 import com.mrq.bingo.model.ColumnRange;
 import lombok.Getter;
 
 import java.util.BitSet;
+import java.util.OptionalInt;
 
 @Getter
 public class NumberPool {
     private final BitSet availableNumbers;
-    private final int minNumber;
-    private final int maxNumber;
+    private final int min;
+    private final int max;
 
-    public NumberPool(int minNumber, int maxNumber) {
-        this.minNumber = minNumber;
-        this.maxNumber = maxNumber;
-        this.availableNumbers = new BitSet(maxNumber - minNumber + 1);
-        availableNumbers.set(0, maxNumber - minNumber + 1);
+    public NumberPool(int min, int max) {
+        this.min = min;
+        this.max = max;
+        this.availableNumbers = new BitSet(max - min + 1);
+        availableNumbers.set(0, max - min + 1);
     }
 
     public boolean isAvailable(int number) {
-        validateNumber(number);
-        return availableNumbers.get(number - minNumber);
+        return availableNumbers.get(number - min);
     }
 
     public void markUsed(int number) {
-        validateNumber(number);
-        availableNumbers.clear(number - minNumber);
+        availableNumbers.clear(number - min);
     }
 
-    public void markAvailable(int number) {
-        validateNumber(number);
-        availableNumbers.set(number - minNumber);
-    }
-
-    public int getNextAvailable(ColumnRange range) {
+    public OptionalInt getNextAvailable(ColumnRange range) {
         for (int i = range.getStart(); i <= range.getEnd(); i++) {
             if (isAvailable(i)) {
-                return i;
+                return OptionalInt.of(i);
             }
         }
-        throw new IllegalStateException(
-                String.format("No available numbers in range %d-%d",
-                        range.getStart(), range.getEnd())
-        );
-    }
-
-    private void validateNumber(int number) {
-        if (number < minNumber || number > maxNumber) {
-            throw new IllegalArgumentException(
-                    String.format("Number %d is outside valid range %d-%d",
-                            number, minNumber, maxNumber)
-            );
-        }
+        return OptionalInt.empty(); // Return empty if no numbers are available
     }
 }

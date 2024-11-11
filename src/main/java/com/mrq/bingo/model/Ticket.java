@@ -2,6 +2,10 @@ package com.mrq.bingo.model;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
+
 @Getter
 public class Ticket {
     public static final int ROWS = 3;
@@ -24,24 +28,23 @@ public class Ticket {
     }
 
     public void setNumber(int row, int col, Integer value) {
+        validatePosition(row, col);
         grid[row][col] = new Cell(value, col);
     }
 
     public Cell getCell(int row, int col) {
+        validatePosition(row, col);
         return grid[row][col];
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                Cell cell = grid[row][col];
-                sb.append(cell.isEmpty() ? "   " :
-                        String.format("%3d", cell.getValue()));
-            }
-            sb.append("\n");
+    public Stream<Cell> streamCells() {
+        return Arrays.stream(grid)
+                .flatMap(Arrays::stream);
+    }
+
+    private void validatePosition(int row, int col) {
+        if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+            throw new IllegalArgumentException("Invalid position: row=" + row + ", col=" + col);
         }
-        return sb.toString();
     }
 }

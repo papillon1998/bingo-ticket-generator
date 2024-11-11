@@ -3,7 +3,6 @@ package com.mrq.bingo.model;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TicketTest {
@@ -12,7 +11,6 @@ class TicketTest {
     @DisplayName("New ticket should have all cells empty")
     void newTicketShouldBeEmpty() {
         Ticket ticket = new Ticket();
-
     }
 
     @Test

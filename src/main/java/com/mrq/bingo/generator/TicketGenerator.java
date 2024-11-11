@@ -1,182 +1,75 @@
+// src/main/java/com/mrq/bingo/generator/TicketGenerator.java
 package com.mrq.bingo.generator;
 
-import com.mrq.bingo.model.Ticket;
-import lombok.RequiredArgsConstructor;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import com.mrq.bingo.model.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 
-@RequiredArgsConstructor
 public class TicketGenerator {
-    private static final int ROWS = 3;
-    private static final int COLS = 9;
-    private static final int NUMBERS_PER_ROW = 5;
-    private static final int MAX_NUMBERS_PER_COL = 3;
 
-    private final List<List<Integer>> columnPools;
-    private final int[][] grid = new int[ROWS][COLS];
-    private final boolean[][] used = new boolean[ROWS][COLS];
+    public Ticket generateTicket(NumberPool[] columnPools) {
+        Ticket ticket = new Ticket();
+        List<Integer>[] columns = new List[Ticket.COLS];
 
-    public Ticket generateTicket() {
-        // Step 1: Distribute numbers across columns
-        int[] columnCounts = distributeNumbersToColumns();
-
-        // Step 2: Fill columns with numbers
-        fillColumns(columnCounts);
-
-        // Step 3: Ensure row constraints
-        balanceRows();
-
-        // Step 4: Create ticket from grid
-        return createTicket();
-    }
-
-    private int[] distributeNumbersToColumns() {
-        int[] columnCounts = new int[COLS];
-        int numbersToDistribute = NUMBERS_PER_ROW * ROWS;
-
-        // First, ensure each column has at least one number
-        for (int col = 0; col < COLS; col++) {
-            if (!columnPools.get(col).isEmpty()) {
-                columnCounts[col] = 1;
-                numbersToDistribute--;
-            }
+        for (int col = 0; col < Ticket.COLS; col++) {
+            List<Integer> columnNumbers = getRandomNumbersForColumn(columnPools[col], col);
+            columns[col] = columnNumbers;
         }
 
-        // Distribute remaining numbers
-        while (numbersToDistribute > 0) {
-            int col = ThreadLocalRandom.current().nextInt(COLS);
-            if (columnCounts[col] < MAX_NUMBERS_PER_COL &&
-                    columnCounts[col] < columnPools.get(col).size()) {
-                columnCounts[col]++;
-                numbersToDistribute--;
-            }
-        }
-
-        return columnCounts;
+        fillTicketGrid(ticket, columns);
+        return ticket;
     }
 
+    private List<Integer> getRandomNumbersForColumn(NumberPool pool, int col) {
+        List<Integer> numbers = new ArrayList<>();
+        int maxNumbers = col == 0 || col == 8 ? 1 : 2;
 
+        for (int i = 0; i < maxNumbers; i++) {
+            pool.getNextAvailable(ColumnRange.forColumn(col)).ifPresent(number -> {
+                pool.markUsed(number);
+                numbers.add(number);
+            });
+        }
+        return numbers;
+    }
 
+    private void fillTicketGrid(Ticket ticket, List<Integer>[] columns) {
+        for (int col = 0; col < Ticket.COLS; col++) {
+            List<Integer> columnValues = columns[col];
+            int filledRows = 0;
 
-    private void fillColumns(int[] columnCounts) {
-        for (int col = 0; col < COLS; col++) {
-            if (columnCounts[col] > 0) {
-                List<Integer> numbers = new ArrayList<>();
-                List<Integer> pool = columnPools.get(col);
-
-                // Take required numbers from pool
-                for (int i = 0; i < columnCounts[col]; i++) {
-                    if (!pool.isEmpty()) {
-                        numbers.add(pool.remove(pool.size() - 1));
+            for (Integer value : columnValues) {
+                for (int row = 0; row < Ticket.ROWS && filledRows < columnValues.size(); row++) {
+                    if (ticket.getCell(row, col).isEmpty()) {
+                        ticket.setNumber(row, col, value);
+                        filledRows++;
+                        break;
                     }
                 }
-
-                // Sort numbers for this column
-                Collections.sort(numbers);
-
-                // Distribute numbers to rows
-                List<Integer> availableRows = new ArrayList<>();
-                for (int row = 0; row < ROWS; row++) {
-                    availableRows.add(row);
-                }
-                Collections.shuffle(availableRows, ThreadLocalRandom.current());
-
-                for (int i = 0; i < numbers.size(); i++) {
-                    int row = availableRows.get(i);
-                    grid[row][col] = numbers.get(i);
-                    used[row][col] = true;
-                }
             }
         }
     }
 
-//    private void balanceRows() {
-//        while (!areRowsBalanced()) {
-//            for (int row = 0; row < ROWS; row++) {
-//                int count = countNumbersInRow(row);
-//                if (count > NUMBERS_PER_ROW) {
-//                    removeNumberFromRow(row);
-//                } else if (count < NUMBERS_PER_ROW) {
-//                    addNumberToRow(row);
-//                }
-//            }
-//        }
-//    }
-private void balanceRows() {
-    for (int row = 0; row < ROWS; row++) {
-        while (countNumbersInRow(row) < NUMBERS_PER_ROW) {
-            addNumberToRow(row);
-        }
-    }
-}
-
-    private boolean areRowsBalanced() {
-        for (int row = 0; row < ROWS; row++) {
-            if (countNumbersInRow(row) != NUMBERS_PER_ROW) {
-                return false;
-            }
-        }
-        return true;
+    public List<Strip> generateStrips(int numberOfStrips) {
+        return IntStream.range(0, numberOfStrips)
+                .parallel()
+                .mapToObj(i -> generateStrip())
+                .toList();
     }
 
-    private int countNumbersInRow(int row) {
-        int count = 0;
-        for (int col = 0; col < COLS; col++) {
-            if (used[row][col]) count++;
-        }
-        return count;
-    }
+    public Strip generateStrip() {
+        Strip strip = new Strip();
+        NumberPool[] pools = new NumberPool[Ticket.COLS];
 
-    private void removeNumberFromRow(int row) {
-        List<Integer> filledCols = new ArrayList<>();
-        for (int col = 0; col < COLS; col++) {
-            if (used[row][col]) {
-                filledCols.add(col);
-            }
+        for (int i = 0; i < pools.length; i++) {
+            ColumnRange range = ColumnRange.forColumn(i);
+            pools[i] = new NumberPool(range.getStart(), range.getEnd());
         }
 
-        if (!filledCols.isEmpty()) {
-            int col = filledCols.get(ThreadLocalRandom.current().nextInt(filledCols.size()));
-            columnPools.get(col).add(grid[row][col]);
-            used[row][col] = false;
+        for (int i = 0; i < Strip.TICKETS_PER_STRIP; i++) {
+            strip.addTicket(generateTicket(pools));
         }
-    }
-
-    private void addNumberToRow(int row) {
-        List<Integer> availableCols = new ArrayList<>();
-        for (int col = 0; col < COLS; col++) {
-            if (!used[row][col] && !columnPools.get(col).isEmpty() &&
-                    countNumbersInColumn(col) < MAX_NUMBERS_PER_COL) {
-                availableCols.add(col);
-            }
-        }
-
-        if (!availableCols.isEmpty()) {
-            int col = availableCols.get(ThreadLocalRandom.current().nextInt(availableCols.size()));
-            List<Integer> pool = columnPools.get(col);
-            int number = pool.remove(pool.size() - 1);
-            grid[row][col] = number;
-            used[row][col] = true;
-        }
-    }
-
-    private int countNumbersInColumn(int col) {
-        int count = 0;
-        for (int row = 0; row < ROWS; row++) {
-            if (used[row][col]) count++;
-        }
-        return count;
-    }
-
-    private Ticket createTicket() {
-        Ticket ticket = new Ticket();
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                if (used[row][col]) {
-                    ticket.setNumber(row, col, grid[row][col]);
-                }
-            }
-        }
-        return ticket;
+        return strip;
     }
 }
