@@ -141,13 +141,14 @@ class BingoStripGeneratorTest {
     @DisplayName("Strip generation should be performant")
     void shouldGenerateManyStripsQuickly() {
         long startTime = System.currentTimeMillis();
-        int numStrips = 10000;
+        int numStrips = 100000;
 
         IntStream.range(0, numStrips)
                 .mapToObj(i -> generator.generateStrip())
                 .forEach(this::verifyBasicRequirements);
 
         long duration = System.currentTimeMillis() - startTime;
+        System.out.println(String.format("Took %dms to generate %d strips", duration, numStrips));
         assertTrue(duration < 1000,
                 String.format("Took %dms to generate %d strips", duration, numStrips));
     }
