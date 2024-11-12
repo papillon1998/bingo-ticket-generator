@@ -1,5 +1,6 @@
 package com.mrq.bingo.generator;
 
+import com.mrq.bingo.BingoStripPrinter;
 import com.mrq.bingo.model.Strip;
 import com.mrq.bingo.model.Ticket;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,16 +44,15 @@ class BingoStripGeneratorTest {
     void shouldHaveExactlyFiveNumbersPerRow() {
         Strip strip = generator.generateStrip();
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-            for (int row = 0; row < ROWS; row++) {
-                long numbersInRow = Arrays.stream(grid[row], 0, COLUMNS)
-                        .filter(num -> num > 0)
-                        .count();
-                assertEquals(NUMBERS_PER_ROW, numbersInRow,
-                        String.format("Row %d does not have exactly %d numbers", row, NUMBERS_PER_ROW));
-            }
-        }
+        strip.tickets().forEach(ticket ->
+                IntStream.range(0, ROWS).forEach(row -> {
+                    long numbersInRow = Arrays.stream(ticket.getGrid()[row])
+                            .filter(num -> num > 0)
+                            .count();
+                    assertEquals(NUMBERS_PER_ROW, numbersInRow,
+                            String.format("Row %d does not have exactly %d numbers", row, NUMBERS_PER_ROW));
+                })
+        );
     }
 
     @Test
@@ -60,47 +60,42 @@ class BingoStripGeneratorTest {
     void shouldHaveOneToThreeNumbersPerColumn() {
         Strip strip = generator.generateStrip();
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-            for (int col = 0; col < COLUMNS; col++) {
-                int finalCol = col;
-                long numbersInColumn = IntStream.range(0, ROWS)
-                        .map(row -> grid[row][finalCol])
-                        .filter(num -> num > 0)
-                        .count();
-                assertTrue(
-                        numbersInColumn >= MIN_NUMBERS_PER_COLUMN &&
-                                numbersInColumn <= MAX_NUMBERS_PER_COLUMN,
-                        String.format("Column %d has %d numbers, should be between %d and %d",
-                                col, numbersInColumn, MIN_NUMBERS_PER_COLUMN, MAX_NUMBERS_PER_COLUMN)
-                );
-            }
-        }
+        strip.tickets().forEach(ticket ->
+                IntStream.range(0, COLUMNS).forEach(col -> {
+                    long numbersInColumn = getNumbersInColumn(ticket, col);
+                    assertTrue(
+                            numbersInColumn >= MIN_NUMBERS_PER_COLUMN &&
+                                    numbersInColumn <= MAX_NUMBERS_PER_COLUMN,
+                            String.format("Column %d has %d numbers, should be between %d and %d",
+                                    col, numbersInColumn, MIN_NUMBERS_PER_COLUMN, MAX_NUMBERS_PER_COLUMN)
+                    );
+                })
+        );
     }
 
     @Test
     @DisplayName("Numbers should be in correct column ranges")
     void shouldHaveNumbersInCorrectRanges() {
         Strip strip = generator.generateStrip();
+        BingoStripPrinter.printStrip(strip);
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-            for (int col = 0; col < COLUMNS; col++) {
-                int minValue = (col == 0) ? 1 : col * 10;
-                int maxValue = (col == COLUMNS - 1) ? TOTAL_NUMBERS : (col + 1) * 10 - 1;
+        strip.tickets().forEach(ticket ->
+                IntStream.range(0, COLUMNS).forEach(col -> {
+                    int minValue = (col == 0) ? 1 : col * 10;
+                    int maxValue = (col == COLUMNS - 1) ? TOTAL_NUMBERS : (col + 1) * 10 - 1;
 
-                for (int row = 0; row < ROWS; row++) {
-                    int number = grid[row][col];
-                    if (number > 0) {
-                        assertTrue(
-                                number >= minValue && number <= maxValue,
-                                String.format("Number %d in column %d is not in range [%d-%d]",
-                                        number, col, minValue, maxValue)
-                        );
-                    }
-                }
-            }
-        }
+                    IntStream.range(0, ROWS)
+                            .map(row -> ticket.getGrid()[row][col])
+                            .filter(number -> number > 0)
+                            .forEach(number ->
+                                    assertTrue(
+                                            number >= minValue && number <= maxValue,
+                                            String.format("Number %d in column %d is not in range [%d-%d]",
+                                                    number, col, minValue, maxValue)
+                                    )
+                            );
+                })
+        );
     }
 
     @Test
@@ -108,20 +103,18 @@ class BingoStripGeneratorTest {
     void shouldHaveNumbersInAscendingOrder() {
         Strip strip = generator.generateStrip();
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-            for (int col = 0; col < COLUMNS; col++) {
-                int lastNumber = 0;
-                for (int row = 0; row < ROWS; row++) {
-                    int currentNumber = grid[row][col];
-                    if (currentNumber > 0) {
-                        assertTrue(currentNumber > lastNumber,
-                                String.format("Numbers in column %d are not in ascending order", col));
-                        lastNumber = currentNumber;
-                    }
-                }
-            }
-        }
+        strip.tickets().forEach(ticket ->
+                IntStream.range(0, COLUMNS).forEach(col -> {
+                    int[] columnNumbers = getColumnNumbers(ticket, col);
+                    IntStream.range(1, columnNumbers.length)
+                            .forEach(i ->
+                                    assertTrue(
+                                            columnNumbers[i] > columnNumbers[i-1],
+                                            String.format("Numbers in column %d are not in ascending order", col)
+                                    )
+                            );
+                })
+        );
     }
 
     @Test
@@ -130,18 +123,15 @@ class BingoStripGeneratorTest {
         Strip strip = generator.generateStrip();
         Set<Integer> usedNumbers = new HashSet<>();
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-            for (int row = 0; row < ROWS; row++) {
-                for (int col = 0; col < COLUMNS; col++) {
-                    int number = grid[row][col];
-                    if (number > 0) {
+        strip.tickets().stream()
+                .map(Ticket::getGrid)
+                .flatMap(Arrays::stream)
+                .flatMapToInt(Arrays::stream)
+                .filter(number -> number > 0)
+                .forEach(number ->
                         assertTrue(usedNumbers.add(number),
-                                String.format("Number %d appears more than once", number));
-                    }
-                }
-            }
-        }
+                                String.format("Number %d appears more than once", number))
+                );
 
         assertEquals(TOTAL_NUMBERS, usedNumbers.size(),
                 "Not all numbers from 1-" + TOTAL_NUMBERS + " are used");
@@ -153,10 +143,9 @@ class BingoStripGeneratorTest {
         long startTime = System.currentTimeMillis();
         int numStrips = 10000;
 
-        for (int i = 0; i < numStrips; i++) {
-            Strip strip = generator.generateStrip();
-            verifyBasicRequirements(strip);
-        }
+        IntStream.range(0, numStrips)
+                .mapToObj(i -> generator.generateStrip())
+                .forEach(this::verifyBasicRequirements);
 
         long duration = System.currentTimeMillis() - startTime;
         assertTrue(duration < 1000,
@@ -166,26 +155,35 @@ class BingoStripGeneratorTest {
     private void verifyBasicRequirements(Strip strip) {
         assertEquals(TICKETS_PER_STRIP, strip.tickets().size());
 
-        for (Ticket ticket : strip.tickets()) {
-            int[][] grid = ticket.getGrid();
-
+        strip.tickets().forEach(ticket -> {
             // Verify row counts
-            for (int row = 0; row < ROWS; row++) {
-                assertEquals(NUMBERS_PER_ROW, java.util.Arrays.stream(grid[row], 0, COLUMNS)
-                        .filter(n -> n > 0)
-                        .count());
-            }
+            IntStream.range(0, ROWS).forEach(row ->
+                    assertEquals(NUMBERS_PER_ROW,
+                            Arrays.stream(ticket.getGrid()[row])
+                                    .filter(n -> n > 0)
+                                    .count())
+            );
 
             // Verify column counts
-            for (int col = 0; col < COLUMNS; col++) {
-                int finalCol = col;
-                long count = IntStream.range(0, ROWS)
-                        .map(row -> grid[row][finalCol])
-                        .filter(n -> n > 0)
-                        .count();
+            IntStream.range(0, COLUMNS).forEach(col -> {
+                long count = getNumbersInColumn(ticket, col);
                 assertTrue(count >= MIN_NUMBERS_PER_COLUMN &&
                         count <= MAX_NUMBERS_PER_COLUMN);
-            }
-        }
+            });
+        });
+    }
+
+    private long getNumbersInColumn(Ticket ticket, int col) {
+        return IntStream.range(0, ROWS)
+                .map(row -> ticket.getGrid()[row][col])
+                .filter(num -> num > 0)
+                .count();
+    }
+
+    private int[] getColumnNumbers(Ticket ticket, int col) {
+        return IntStream.range(0, ROWS)
+                .map(row -> ticket.getGrid()[row][col])
+                .filter(num -> num > 0)
+                .toArray();
     }
 }

@@ -2,50 +2,50 @@ package com.mrq.bingo.service;
 
 
 import lombok.Getter;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class NumberPoolService {
 
+    private static final int COLUMNS = 9;
+    private static final int[][] COLUMN_RANGES = {
+            {1, 9},
+            {10, 19},
+            {20, 29},
+            {30, 39},
+            {40, 49},
+            {50, 59},
+            {60, 69},
+            {70, 79},
+            {80, 90}
+    };
+
     @Getter
     private final Map<Integer, List<Integer>> rangeMap = new HashMap<>();
+    private final Random random = new Random();
 
     public void initializePool() {
         rangeMap.clear();
-        initializeFirstColumn();
-        initializeMiddleColumns();
-        initializeLastColumn();
+        for (int i = 0; i < COLUMNS; i++) {
+            initializeColumnRange(i + 1, COLUMN_RANGES[i][0], COLUMN_RANGES[i][1]);
+        }
     }
 
-    private void initializeFirstColumn() {
-        List<Integer> firstRange = IntStream.range(1, 10)
+    private void initializeColumnRange(int column, int start, int end) {
+        List<Integer> range = IntStream.rangeClosed(start, end)
                 .boxed()
-                .collect(Collectors.toList());
-        Collections.shuffle(firstRange);
-        rangeMap.put(1, firstRange);
+                .collect(Collectors.toCollection(ArrayList::new));
+        Collections.shuffle(range, random);
+        rangeMap.put(column, range);
     }
 
-    private void initializeMiddleColumns() {
-        IntStream.range(2, 9).forEach(rangeNumber -> {
-            List<Integer> range = IntStream.range((rangeNumber-1)*10, (rangeNumber-1)*10 + 10)
-                    .boxed()
-                    .collect(Collectors.toList());
-            Collections.shuffle(range);
-            rangeMap.put(rangeNumber, range);
-        });
-    }
-
-    private void initializeLastColumn() {
-        List<Integer> lastRange = IntStream.range(80, 91)
-                .boxed()
-                .collect(Collectors.toList());
-        Collections.shuffle(lastRange);
-        rangeMap.put(9, lastRange);
-    }
 
     public int getRandomNumberByRange(int rangeNumber) {
         List<Integer> numbers = rangeMap.get(rangeNumber);

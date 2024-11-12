@@ -27,7 +27,6 @@ public class BingoStripPrinter {
         System.out.println("   1-9  10-19 20-29 30-39 40-49 50-59 60-69 70-79 80-90");
         System.out.println("   ---  ----- ----- ----- ----- ----- ----- ----- -----");
 
-        // Print ticket content
         int[][] grid = ticket.getGrid();
         for (int row = 0; row < 3; row++) {
             System.out.print(row + 1 + ") ");

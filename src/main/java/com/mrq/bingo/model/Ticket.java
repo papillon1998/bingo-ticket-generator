@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.IntStream;
 
 @Getter
 @Setter
@@ -39,38 +37,5 @@ public class Ticket {
         for (int i = 0; i < ROWS; i++) {
             grid[i][col] = column[i];
         }
-    }
-
-    public void removeNumber(int row, int col) {
-        grid[row][col] = 0;
-        sortColumn(col);
-    }
-
-    public List<Integer> getNumbersInColumn(int col) {
-        return IntStream.range(0, ROWS)
-                .map(row -> grid[row][col])
-                .filter(num -> num > 0)
-                .boxed()
-                .toList();
-    }
-
-    public int getNumberCountInRow(int row) {
-        return (int) Arrays.stream(grid[row], 0, COLS)
-                .filter(num -> num > 0)
-                .count();
-    }
-
-    public List<Integer> getEmptyColumnsInRow(int row) {
-        return IntStream.range(0, COLS)
-                .filter(col -> grid[row][col] == 0)
-                .boxed()
-                .toList();
-    }
-
-    public List<Integer> getFilledColumnsInRow(int row) {
-        return IntStream.range(0, COLS)
-                .filter(col -> grid[row][col] > 0)
-                .boxed()
-                .toList();
     }
 }

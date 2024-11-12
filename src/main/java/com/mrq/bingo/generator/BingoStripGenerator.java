@@ -30,21 +30,16 @@ public class BingoStripGenerator {
         // Initialize number pool for new strip
         numberPoolService.initializePool();
 
-        // Create empty tickets
         List<Ticket> strip = createEmptyTickets();
 
-        // Fill tickets following the pattern
         ticketFillService.fillFirstRow(strip);
         ticketFillService.fillMiddleRow(strip);
         ticketFillService.fillLastRow(strip);
 
-        // Handle remaining numbers
         ticketFillService.distributeRemainingNumbers(strip);
 
-        // Validate and fix any issues
         validationService.validateAndFixColumns(strip);
 
-        // Sort all columns
         validationService.sortAllColumns(strip);
 
         return new Strip(strip);
