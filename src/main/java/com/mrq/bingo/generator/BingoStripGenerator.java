@@ -24,7 +24,7 @@ public class BingoStripGenerator {
 
         this.setRangePerColumn();
         this.setRandomColumnValuesOnRow(0, strip);
-        this.setValuesInFreeColumns(1,strip);
+        this.setValuesInFreeColumns(strip);
         this.setRandomColumnValuesOnRow(2, strip);
 
         if (!rangeMap.isEmpty()) {
@@ -63,9 +63,9 @@ public class BingoStripGenerator {
     }
 
 
-    private void setValuesInFreeColumns(int row,List<Ticket> strip) {
+    private void setValuesInFreeColumns(List<Ticket> strip) {
         for (Ticket ticket: strip) {
-            List<Integer> freeColumns = this.getFreeColumnsUntilRow(ticket.getGrid(), row);
+            List<Integer> freeColumns = this.getFreeColumnsUntilRow(ticket.getGrid(), 1);
             List<Integer> columns = this.getRandomRangeNumbers(5 - freeColumns.size(), freeColumns);
             columns.addAll(freeColumns);
             columns.forEach(column -> ticket.getGrid()[1][column-1] = this.getRandomNumberByRange(column));
@@ -75,7 +75,7 @@ public class BingoStripGenerator {
 
     public List<Integer> getRandomRangeNumbers(int count, List<Integer> exclude) {
         List<Integer> range = IntStream.range(1, 10)
-                .filter(rangeNumber -> !exclude.contains(rangeNumber) && this.rangeMap.get(rangeNumber).size() > 0).boxed().collect(Collectors.toList());
+                .filter(rangeNumber -> !exclude.contains(rangeNumber) && !this.rangeMap.get(rangeNumber).isEmpty()).boxed().collect(Collectors.toList());
         Collections.shuffle(range);
         return range.stream().limit(count).collect(Collectors.toList());
     }
@@ -89,9 +89,10 @@ public class BingoStripGenerator {
             for (int j=0; j<row; j++) {
                 if (ticket[j][i] != 0) {
                     isFree = false;
+                    break;
                 }
             }
-            if (isFree && this.rangeMap.get(i+1).size() >0) {
+            if (isFree && !this.rangeMap.get(i+1).isEmpty()) {
                 freeColumns.add(i+1);
             }
         }
@@ -153,7 +154,7 @@ public class BingoStripGenerator {
                     }
                     Collections.sort(column);
                     if (indexOfZero!= -1) {
-                        column.add(indexOfZero, Integer.valueOf(0));
+                        column.add(indexOfZero, 0);
                     }
                     for (int j=0; j<ROW; j++) {
                         ticket.getGrid()[j][i] = column.get(j);

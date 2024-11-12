@@ -1,14 +1,11 @@
 package com.mrq.bingo.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Getter
@@ -24,7 +21,6 @@ public class Ticket {
     }
 
     public void placeNumber(int number, int col) {
-        // Find first empty row in column
         for (int row = 0; row < ROWS; row++) {
             if (grid[row][col] == 0) {
                 grid[row][col] = number;
@@ -55,12 +51,11 @@ public class Ticket {
                 .map(row -> grid[row][col])
                 .filter(num -> num > 0)
                 .boxed()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public int getNumberCountInRow(int row) {
-        return (int) IntStream.range(0, COLS)
-                .map(col -> grid[row][col])
+        return (int) Arrays.stream(grid[row], 0, COLS)
                 .filter(num -> num > 0)
                 .count();
     }
@@ -69,19 +64,13 @@ public class Ticket {
         return IntStream.range(0, COLS)
                 .filter(col -> grid[row][col] == 0)
                 .boxed()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<Integer> getFilledColumnsInRow(int row) {
         return IntStream.range(0, COLS)
                 .filter(col -> grid[row][col] > 0)
                 .boxed()
-                .collect(Collectors.toList());
+                .toList();
     }
-
-//    public int[][] getGrid() {
-//        return Arrays.stream(grid)
-//                .map(int[]::clone)
-//                .toArray(int[][]::new);
-//    }
 }
