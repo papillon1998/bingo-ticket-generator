@@ -1,10 +1,19 @@
 package com.mrq.bingo.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class Ticket {
     private final int[][] grid;
     private static final int ROWS = 3;
@@ -70,9 +79,9 @@ public class Ticket {
                 .collect(Collectors.toList());
     }
 
-    public int[][] getGrid() {
-        return Arrays.stream(grid)
-                .map(int[]::clone)
-                .toArray(int[][]::new);
-    }
+//    public int[][] getGrid() {
+//        return Arrays.stream(grid)
+//                .map(int[]::clone)
+//                .toArray(int[][]::new);
+//    }
 }

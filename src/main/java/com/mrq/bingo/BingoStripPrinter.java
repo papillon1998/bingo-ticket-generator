@@ -11,7 +11,7 @@ public class BingoStripPrinter {
 
     public static void printStrip(Strip strip) {
         int ticketNumber = 1;
-        for (Ticket ticket : strip.getTickets()) {
+        for (Ticket ticket : strip.tickets()) {
             printTicket(ticket, ticketNumber++);
             System.out.println(); // Space between tickets
         }
