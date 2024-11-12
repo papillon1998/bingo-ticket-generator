@@ -9,21 +9,21 @@ public class BingoStripPrinter {
     private static final String ANSI_BLUE = "\u001B[34m";
     private static final String ANSI_GREEN = "\u001B[32m";
 
+    BingoStripPrinter() {
+    }
     public static void printStrip(Strip strip) {
         int ticketNumber = 1;
         for (Ticket ticket : strip.tickets()) {
             printTicket(ticket, ticketNumber++);
-            System.out.println(); // Space between tickets
+            System.out.println();
         }
     }
 
     private static void printTicket(Ticket ticket, int ticketNumber) {
-        // Print ticket header
         System.out.println(ANSI_GREEN + "=".repeat(45));
         System.out.println("Ticket #" + ticketNumber);
         System.out.println("=".repeat(45) + ANSI_RESET);
 
-        // Print column headers
         System.out.println("   1-9  10-19 20-29 30-39 40-49 50-59 60-69 70-79 80-90");
         System.out.println("   ---  ----- ----- ----- ----- ----- ----- ----- -----");
 
